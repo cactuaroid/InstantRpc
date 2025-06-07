@@ -39,7 +39,7 @@ namespace InstantRpc
             {
                 throw new ArgumentException(nameof(instanceId), $"Duplicated instanceId [{key}] for type {typeof(T)}");
             }
-            Expose("");
+            
             _targets[key] = target;
 
             if (_serverThread is null)
@@ -47,8 +47,8 @@ namespace InstantRpc
                 _serverThread = Task.Run(() => ServerThread());
             }
 
-            _actionWrapper = actionWrapper ?? ((a) => a());
-            _funcWrapper = funcWrapper ?? ((f) => f());
+            _actionWrapper = actionWrapper ?? ((a) => a.Invoke());
+            _funcWrapper = funcWrapper ?? ((f) => f.Invoke());
         }
 
         private static void ServerThread()
