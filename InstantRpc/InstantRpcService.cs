@@ -11,9 +11,17 @@ namespace InstantRpc
     {
         public static IReadOnlyDictionary<(string TypeName, string Key), object> Targets => _targets;
         private static Dictionary<(string TypeName, string Key), object> _targets = new Dictionary<(string, string), object>();
-        private static Task _thread;
+        private static Task _serverThread;
+        private static Action<Action> _actionWrapper;
+        private static Func<Func<object>, object> _funcWrapper;
 
         // static class is not supported yet
+
+        public static void Expose<T>(T target, string instanceId = "")
+            => Expose(target, "", null, null);
+
+        public static void Expose<T>(T target, Action<Action> actionWrapper, Func<Func<object>, object> funcWrapper)
+            => Expose(target, "", actionWrapper, funcWrapper);
 
         /// <summary>
         /// 
@@ -21,21 +29,26 @@ namespace InstantRpc
         /// <typeparam name="T"></typeparam>
         /// <param name="target"></param>
         /// <param name="instanceId"></param>
+        /// <param name="actionWrapper"></param>
+        /// <param name="funcWrapper"></param>
         /// <exception cref="ArgumentException"></exception>
-        public static void Expose<T>(T target, string instanceId = "")
+        public static void Expose<T>(T target, string instanceId, Action<Action> actionWrapper, Func<Func<object>, object> funcWrapper)
         {
             var key = (typeof(T).AssemblyQualifiedName, instanceId);
             if (_targets.ContainsKey(key))
             {
-                throw new ArgumentException(nameof(instanceId), $"Duplicated instanceId: {key}");
+                throw new ArgumentException(nameof(instanceId), $"Duplicated instanceId [{key}] for type {typeof(T)}");
             }
-
+            Expose("");
             _targets[key] = target;
 
-            if (_thread is null)
+            if (_serverThread is null)
             {
-                _thread = Task.Run(() => ServerThread());
+                _serverThread = Task.Run(() => ServerThread());
             }
+
+            _actionWrapper = actionWrapper ?? ((a) => a());
+            _funcWrapper = funcWrapper ?? ((f) => f());
         }
 
         private static void ServerThread()
@@ -109,7 +122,7 @@ namespace InstantRpc
         {
             var (instance, memberName) = ExtractPath(target, memberPath);
             var prop = instance.GetType().GetProperty(memberName);
-            var result = prop.GetValue(instance);
+            var result = _funcWrapper.Invoke(() => prop.GetValue(instance));
 
             return $"{true}|{result}";
         }
@@ -121,7 +134,7 @@ namespace InstantRpc
             var argXml = XElement.Parse(arg);
 
             var param = DeserializeArgument(argXml);
-            prop.SetValue(instance, param);
+            _actionWrapper.Invoke(() => prop.SetValue(instance, param));
 
             return $"{true}|";
         }
@@ -133,7 +146,7 @@ namespace InstantRpc
             var param = DeserializeArguments(argsXml.Elements());
 
             var method = instance.GetType().GetMethod(memberName, argsXml.Elements().Select((x) => GetType(x)).ToArray());
-            var result = method.Invoke(instance, param);
+            var result = _funcWrapper.Invoke(() => method.Invoke(instance, param));
 
             return $"{true}|{result}";
         }

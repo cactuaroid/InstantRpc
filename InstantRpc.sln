@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35931.197 d17.13
+VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstantRpc", "InstantRpc\InstantRpc.csproj", "{A4835EF3-9628-4A8D-831C-F29F617C6DB6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstantRpc.Fx", "InstantRpc.Fx\InstantRpc.Fx.csproj", "{5B6060BE-4439-45EE-9097-2E94C301F831}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{A4835EF3-9628-4A8D-831C-F29F617C6DB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A4835EF3-9628-4A8D-831C-F29F617C6DB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A4835EF3-9628-4A8D-831C-F29F617C6DB6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B6060BE-4439-45EE-9097-2E94C301F831}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B6060BE-4439-45EE-9097-2E94C301F831}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B6060BE-4439-45EE-9097-2E94C301F831}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B6060BE-4439-45EE-9097-2E94C301F831}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
