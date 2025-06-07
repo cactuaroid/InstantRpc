@@ -11,6 +11,10 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>
       Make your object accessible from another local process, for testing purpose.
+
+      Supported platform:
+      - .NET Framework 4.7+
+      - .NET Core 2.0+
     </description>
     <copyright>Copyright © 2025 cactuaroid</copyright>
     <tags>rpc ipc test</tags>
