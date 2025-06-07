@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>InstantRpc</id>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <title>InstantRpc</title>
     <authors>cactuaroid</authors>
     <owners>cactuaroid</owners>
@@ -11,16 +11,11 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>
       Make your object accessible from another local process, for testing purpose.
-
-      Supported platform:
-      - .NET Framework 4.7+
-      - .NET Core 2.0+
     </description>
     <copyright>Copyright © 2025 cactuaroid</copyright>
     <tags>rpc ipc test</tags>
   </metadata>
   <files>
-    <file src="..\InstantRpc.Fx\bin\Release\InstantRpc.dll" target="lib\net40" />
     <file src="..\InstantRpc\bin\Release\netstandard2.0\InstantRpc.dll" target="lib\netstandard2.0" />
   </files>
 </package>
