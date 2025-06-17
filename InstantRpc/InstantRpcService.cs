@@ -9,11 +9,9 @@ namespace InstantRpc
 {
     public static class InstantRpcService
     {
-        public static IReadOnlyDictionary<(string TypeName, string Key), object> Targets => _targets;
-        private static Dictionary<(string TypeName, string Key), object> _targets = new Dictionary<(string, string), object>();
+        public static IReadOnlyDictionary<(string TypeName, string Key), TargetInstance> Targets => _targets;
+        private static Dictionary<(string TypeName, string Key), TargetInstance> _targets = new Dictionary<(string, string), TargetInstance>();
         private static Task _serverThread;
-        private static Action<Action> _actionWrapper;
-        private static Func<Func<object>, object> _funcWrapper;
 
         // static class is not supported yet
 
@@ -40,15 +38,12 @@ namespace InstantRpc
                 throw new ArgumentException(nameof(instanceId), $"Duplicated instanceId [{key}] for type {typeof(T)}");
             }
             
-            _targets[key] = target;
+            _targets[key] = new TargetInstance(target, actionWrapper, funcWrapper);
 
             if (_serverThread is null)
             {
                 _serverThread = Task.Run(() => ServerThread());
             }
-
-            _actionWrapper = actionWrapper ?? ((a) => a.Invoke());
-            _funcWrapper = funcWrapper ?? ((f) => f.Invoke());
         }
 
         private static void ServerThread()
@@ -118,35 +113,35 @@ namespace InstantRpc
             }
         }
 
-        private static string Get(object target, string memberPath)
+        private static string Get(TargetInstance target, string memberPath)
         {
             var (instance, memberName) = ExtractPath(target, memberPath);
             var prop = instance.GetType().GetProperty(memberName);
-            var result = _funcWrapper.Invoke(() => prop.GetValue(instance));
+            var result = target.FuncWrapper.Invoke(() => prop.GetValue(instance));
 
             return $"{true}|{result}";
         }
 
-        private static string Set(object target, string memberPath, string arg)
+        private static string Set(TargetInstance target, string memberPath, string arg)
         {
             var (instance, memberName) = ExtractPath(target, memberPath);
             var prop = instance.GetType().GetProperty(memberName);
             var argXml = XElement.Parse(arg);
 
             var param = DeserializeArgument(argXml);
-            _actionWrapper.Invoke(() => prop.SetValue(instance, param));
+            target.ActionWrapper.Invoke(() => prop.SetValue(instance, param));
 
             return $"{true}|";
         }
 
-        private static string Invoke(object target, string memberPath, string args)
+        private static string Invoke(TargetInstance target, string memberPath, string args)
         {
             var (instance, memberName) = ExtractPath(target, memberPath);
             var argsXml = XElement.Parse(args);
             var param = DeserializeArguments(argsXml.Elements());
 
             var method = instance.GetType().GetMethod(memberName, argsXml.Elements().Select((x) => GetType(x)).ToArray());
-            var result = _funcWrapper.Invoke(() => method.Invoke(instance, param));
+            var result = target.FuncWrapper.Invoke(() => method.Invoke(instance, param));
 
             return $"{true}|{result}";
         }
