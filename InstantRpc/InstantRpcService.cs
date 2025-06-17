@@ -80,7 +80,7 @@ namespace InstantRpc
         {
             while (true)
             {
-                using (var pipeServer = new NamedPipeServerStream("InstantRpcPipe", PipeDirection.InOut, 1))
+                using (var pipeServer = new NamedPipeServerStream("InstantRpcPipe"))
                 {
                     pipeServer.WaitForConnection();
                     string response;
@@ -145,7 +145,7 @@ namespace InstantRpc
 
         private static string Get(TargetInstance target, string memberPath)
         {
-            var (instance, memberName) = ExtractPath(target, memberPath);
+            var (instance, memberName) = ExtractPath(target.Instance, memberPath);
             var prop = instance.GetType().GetProperty(memberName);
             var result = target.FuncWrapper.Invoke(() => prop.GetValue(instance));
 
@@ -154,7 +154,7 @@ namespace InstantRpc
 
         private static string Set(TargetInstance target, string memberPath, string arg)
         {
-            var (instance, memberName) = ExtractPath(target, memberPath);
+            var (instance, memberName) = ExtractPath(target.Instance, memberPath);
             var prop = instance.GetType().GetProperty(memberName);
             var argXml = XElement.Parse(arg);
 
@@ -166,7 +166,7 @@ namespace InstantRpc
 
         private static string Invoke(TargetInstance target, string memberPath, string args)
         {
-            var (instance, memberName) = ExtractPath(target, memberPath);
+            var (instance, memberName) = ExtractPath(target.Instance, memberPath);
             var argsXml = XElement.Parse(args);
             var param = DeserializeArguments(argsXml.Elements());
 
