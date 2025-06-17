@@ -63,7 +63,7 @@ namespace InstantRpc
         /// <exception cref="ArgumentException">TValue does not support Parse.</exception>
         public TValue Get<TValue>(Expression<Func<T, TValue>> expression)
         {
-            if (!CanParse(typeof(TValue))) { throw new ArgumentException($"{typeof(TValue)} does not support Parse."); }
+            if (!CanParse(typeof(TValue))) { throw new ArgumentException($"{typeof(TValue)} does not support Parse.", nameof(expression)); }
 
             var memberName = GetMemberAndMethodPath(expression);
             var response = Execute("GET", memberName);
@@ -80,7 +80,7 @@ namespace InstantRpc
         /// <exception cref="ArgumentException"></exception>
         public TReturn Invoke<TReturn>(Expression<Func<T, TReturn>> expression)
         {
-            if (!CanParse(typeof(TReturn))) { throw new ArgumentException($"{typeof(TReturn)} does not support Parse."); }
+            if (!CanParse(typeof(TReturn))) { throw new ArgumentException($"{typeof(TReturn)} does not support Parse.", nameof(expression)); }
 
             var response = InvokeImpl(expression);
             return Parse<TReturn>(response);
@@ -108,7 +108,7 @@ namespace InstantRpc
             }
             else
             {
-                throw new ArgumentException("expression must be method call");
+                throw new ArgumentException("expression must be method call", nameof(expression));
             }
         }
 

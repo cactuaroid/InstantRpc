@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO.Pipes;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -19,6 +20,7 @@ namespace InstantRpc
 
         private static Dictionary<(string TypeName, string Key), TargetInstance> _targets = new Dictionary<(string, string), TargetInstance>();
         private static Task _serverThread;
+        private static readonly Mutex _processMutex = new Mutex(false, "Global\\InstantRpcService_Mutex");
 
         // static class is not supported yet
 
@@ -29,6 +31,7 @@ namespace InstantRpc
         /// <param name="target">target instance</param>
         /// <param name="instanceId">Instance ID to distinguish multiple instances of the same type. "" is ok for single instance case.</param>
         /// <exception cref="ArgumentException">Specified instanceId is already exposed for the same type</exception>
+        /// <exception cref="InvalidOperationException">Another process with InstantRpcService is already running in this PC.</exception>
         public static void Expose<T>(T target, string instanceId = "")
             => Expose(target, "", null, null);
 
@@ -41,6 +44,7 @@ namespace InstantRpc
         /// <param name="actionWrapper">action wrapper to call Set operation</param>
         /// <param name="funcWrapper">function wrapper to call Get and Invoke operation</param>
         /// <exception cref="ArgumentException">Specified instanceId is already exposed for the same type</exception>
+        /// <exception cref="InvalidOperationException">Another process with InstantRpcService is already running in this PC.</exception>
         public static void Expose<T>(T target, Action<Action> actionWrapper, Func<Func<object>, object> funcWrapper)
             => Expose(target, "", actionWrapper, funcWrapper);
 
@@ -53,12 +57,15 @@ namespace InstantRpc
         /// <param name="actionWrapper">action wrapper to call Set operation</param>
         /// <param name="funcWrapper">function wrapper to call Get and Invoke operation</param>
         /// <exception cref="ArgumentException">Specified instanceId is already exposed for the same type</exception>
+        /// <exception cref="InvalidOperationException">Another process with InstantRpcService is already running in this PC.</exception>
         public static void Expose<T>(T target, string instanceId, Action<Action> actionWrapper, Func<Func<object>, object> funcWrapper)
         {
+            if (!_processMutex.WaitOne(0)) { throw new InvalidOperationException("Another process with InstantRpcService is already running in this PC."); }
+
             var key = (typeof(T).AssemblyQualifiedName, instanceId);
             if (_targets.ContainsKey(key))
             {
-                throw new ArgumentException(nameof(instanceId), $"Duplicated instanceId [{key}] for type {typeof(T)}");
+                throw new ArgumentException($"Duplicated instanceId [{key}] for type {typeof(T)}", nameof(instanceId));
             }
             
             _targets[key] = new TargetInstance(target, actionWrapper, funcWrapper);
@@ -73,7 +80,7 @@ namespace InstantRpc
         {
             while (true)
             {
-                using (var pipeServer = new NamedPipeServerStream("InstantRpcPipe"))
+                using (var pipeServer = new NamedPipeServerStream("InstantRpcPipe", PipeDirection.InOut, 1))
                 {
                     pipeServer.WaitForConnection();
                     string response;
