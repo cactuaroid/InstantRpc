@@ -2,6 +2,9 @@
 
 namespace InstantRpc
 {
+    /// <summary>
+    /// Represents a target instance for RPC calls.
+    /// </summary>
     public class TargetInstance
     {
         public object Instance { get; }

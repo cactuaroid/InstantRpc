@@ -9,20 +9,43 @@ using System.Xml.Linq;
 
 namespace InstantRpc
 {
+    /// <summary>
+    /// Instant RPC client for a specific type.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class InstantRpcClient<T>
     {
+        /// <summary>
+        /// Instance ID to distinguish multiple instances of the same type. "" is ok for single instance case.
+        /// </summary>
         public string InstanceId { get; }
 
+        /// <summary>
+        /// Instant RPC client constructor.
+        /// </summary>
+        /// <param name="instanceId">Instance ID to distinguish multiple instances of the same type. "" is ok for single instance case.</param>
         public InstantRpcClient(string instanceId = "")
         {
             InstanceId = instanceId;
         }
 
-        public void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value) where TValue : struct
+        /// <summary>
+        /// Sets a value to a property or field of the target instance. 'value' must be primitive type or enum.
+        /// </summary>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="expression">Lamda expression for the property of field</param>
+        /// <param name="value">value to set</param>
+        public void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value)
         {
             Set(expression, () => value);
         }
 
+        /// <summary>
+        /// Sets a value to a property or field of the target instance. 'value' can be constructor call including member initialization.
+        /// </summary>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="expression">Lamda expression for the property of field</param>
+        /// <param name="value">Lamda expression returning value to set. ex.) () => new MyClass() { A = 1 } </param>
         public void Set<TValue>(Expression<Func<T, TValue>> expression, Expression<Func<TValue>> value)
         {
             var memberName = GetMemberAndMethodPath(expression);
@@ -31,6 +54,13 @@ namespace InstantRpc
             Execute("SET", memberName, arg);
         }
 
+        /// <summary>
+        /// Gets a value from a property or field of the target instance. The type must be primitive type or enum.
+        /// </summary>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="expression">>Lamda expression for the property of field</param>
+        /// <returns>value from the property or field</returns>
+        /// <exception cref="ArgumentException">TValue does not support Parse.</exception>
         public TValue Get<TValue>(Expression<Func<T, TValue>> expression)
         {
             if (!CanParse(typeof(TValue))) { throw new ArgumentException($"{typeof(TValue)} does not support Parse."); }
@@ -41,6 +71,13 @@ namespace InstantRpc
             return Parse<TValue>(response);
         }
 
+        /// <summary>
+        /// Invokes a method of the target instance. The return type must be primitive type or enum.
+        /// </summary>
+        /// <typeparam name="TReturn"></typeparam>
+        /// <param name="expression">Lamda expression for the method</param>
+        /// <returns>returning value from the method</returns>
+        /// <exception cref="ArgumentException"></exception>
         public TReturn Invoke<TReturn>(Expression<Func<T, TReturn>> expression)
         {
             if (!CanParse(typeof(TReturn))) { throw new ArgumentException($"{typeof(TReturn)} does not support Parse."); }
@@ -49,6 +86,10 @@ namespace InstantRpc
             return Parse<TReturn>(response);
         }
 
+        /// <summary>
+        /// Invokes a method of the target instance.
+        /// </summary>
+        /// <param name="expression">>Lamda expression for the method</param>
         public void Invoke(Expression<Action<T>> expression)
         {
             InvokeImpl(expression);
@@ -149,7 +190,7 @@ namespace InstantRpc
         private static string GetMemberName<TValue>(Expression<Func<T, TValue>> expression)
             => (expression.Body is MemberExpression member) ? member.Member.Name : throw new NotSupportedException();
 
-        public static string GetMemberAndMethodPath(LambdaExpression expression)
+        private static string GetMemberAndMethodPath(LambdaExpression expression)
         {
             var pathBuilder = new StringBuilder();
             Expression currentExpression = expression.Body;
@@ -195,7 +236,7 @@ namespace InstantRpc
             return pathBuilder.ToString();
         }
 
-        public static object EvaluateExpression(Expression expression)
+        private static object EvaluateExpression(Expression expression)
         {
             if (expression is ConstantExpression constant)
             {

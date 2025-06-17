@@ -7,29 +7,52 @@ using System.Xml.Linq;
 
 namespace InstantRpc
 {
+    /// <summary>
+    /// Instant RPC service for inter-process communication. Call Expose method to expose a target object.
+    /// </summary>
     public static class InstantRpcService
     {
+        /// <summary>
+        /// A dictionary of exposed targets. The key is a tuple of type name and instance ID, and the value is a TargetInstance.
+        /// </summary>
         public static IReadOnlyDictionary<(string TypeName, string Key), TargetInstance> Targets => _targets;
+
         private static Dictionary<(string TypeName, string Key), TargetInstance> _targets = new Dictionary<(string, string), TargetInstance>();
         private static Task _serverThread;
 
         // static class is not supported yet
 
+        /// <summary>
+        /// Expose a target object for remote access.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="target">target instance</param>
+        /// <param name="instanceId">Instance ID to distinguish multiple instances of the same type. "" is ok for single instance case.</param>
+        /// <exception cref="ArgumentException">Specified instanceId is already exposed for the same type</exception>
         public static void Expose<T>(T target, string instanceId = "")
             => Expose(target, "", null, null);
 
+        /// <summary>
+        /// Expose a target object for remote access with action and function wrappers. 
+        /// Specify '(x) => Dispatcher.Invoke(x)' as wrappers if you want to call operations on the UI thread in WPF applications.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="target">target instance</param>
+        /// <param name="actionWrapper">action wrapper to call Set operation</param>
+        /// <param name="funcWrapper">function wrapper to call Get and Invoke operation</param>
+        /// <exception cref="ArgumentException">Specified instanceId is already exposed for the same type</exception>
         public static void Expose<T>(T target, Action<Action> actionWrapper, Func<Func<object>, object> funcWrapper)
             => Expose(target, "", actionWrapper, funcWrapper);
 
         /// <summary>
-        /// 
+        /// Expose a target object for remote access with action and function wrappers. 
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="target"></param>
-        /// <param name="instanceId"></param>
-        /// <param name="actionWrapper"></param>
-        /// <param name="funcWrapper"></param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <param name="target">target instance</param>
+        /// <param name="instanceId">Instance ID to distinguish multiple instances of the same type. "" is ok for single instance case.</param>
+        /// <param name="actionWrapper">action wrapper to call Set operation</param>
+        /// <param name="funcWrapper">function wrapper to call Get and Invoke operation</param>
+        /// <exception cref="ArgumentException">Specified instanceId is already exposed for the same type</exception>
         public static void Expose<T>(T target, string instanceId, Action<Action> actionWrapper, Func<Func<object>, object> funcWrapper)
         {
             var key = (typeof(T).AssemblyQualifiedName, instanceId);
