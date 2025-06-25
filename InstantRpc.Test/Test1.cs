@@ -1,5 +1,6 @@
 ﻿using InstantRpc.Test.Wpf;
 using System.Diagnostics;
+using System.Windows;
 
 namespace InstantRpc.Test
 {
@@ -24,11 +25,28 @@ namespace InstantRpc.Test
         }
 
         [TestMethod]
-        public void TestMethod1()
+        public void GetSet_Primitive()
         {
-            var top = _client.Get((x) => x.Top);
+            _client.Set((x) => x.Top, 10);
+            Assert.AreEqual(10, _client.Get((x) => x.Top));
+        }
 
-            Assert.AreNotEqual(0, top);
+        [TestMethod]
+        public void GetSet_Enum()
+        {
+            _client.Set((x) => x.Visibility, Visibility.Collapsed);
+            Assert.AreEqual(Visibility.Collapsed, _client.Get((x) => x.Visibility));
+            _client.Set((x) => x.Visibility, Visibility.Visible);
+            Assert.AreEqual(Visibility.Visible, _client.Get((x) => x.Visibility));
+        }
+
+        [TestMethod]
+        public void Invoke()
+        {
+            _client.Invoke((x) => x.Hide());
+            Assert.IsFalse(_client.Get((x) => x.IsVisible));
+            _client.Invoke((x) => x.Show());
+            Assert.IsTrue(_client.Get((x) => x.IsVisible));
         }
     }
 }
