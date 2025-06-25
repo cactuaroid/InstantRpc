@@ -5,6 +5,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace InstantRpc
@@ -27,6 +29,40 @@ namespace InstantRpc
         public InstantRpcClient(string instanceId = "")
         {
             InstanceId = instanceId;
+        }
+
+        /// <summary>
+        /// Waits until the target instance is exposed.
+        /// </summary>
+        public void WaitUntilExposed()
+            => WaitUntilExposed(TimeSpan.MaxValue);
+
+        /// <summary>
+        /// Waits until the target instance is exposed.
+        /// </summary>
+        /// <param name="timeout">Timeout duration to wait for the target instance to be exposed.</param>
+        public void WaitUntilExposed(TimeSpan timeout)
+        {
+            using (var awaiterCanceller = new CancellationTokenSource())
+            {
+                var timeoutTask = Task.Delay(timeout);
+                var awaiter = Task.Run(() =>
+                {
+                    while (!awaiterCanceller.Token.IsCancellationRequested)
+                    {
+                        var response = ExecuteImpl($"WAITFOR|{typeof(T).AssemblyQualifiedName}|{InstanceId}|||");
+                        if (Parse<bool>(response)) { return; }
+
+                        Task.Delay(TimeSpan.FromSeconds(1), awaiterCanceller.Token);
+                    }
+                }, awaiterCanceller.Token);
+
+                var completed = Task.WhenAny(timeoutTask, awaiter).GetAwaiter().GetResult();
+                if (completed == awaiter) { return; }
+
+                awaiterCanceller.Cancel();
+                throw new TimeoutException("The instance was not exposed within specified time.");
+            }
         }
 
         /// <summary>

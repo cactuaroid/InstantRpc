@@ -104,7 +104,11 @@ namespace InstantRpc
                         var member = elements[3];
                         var args = elements[4];
 
-                        if (!Targets.ContainsKey((type, key)))
+                        if (command == "WAITFOR")
+                        {
+                            response = $"{true}|{Targets.ContainsKey((type, key))}";
+                        }
+                        else if (!Targets.ContainsKey((type, key)))
                         {
                             response = $"{false}|{(type, key)} is not exposed.";
                         }
