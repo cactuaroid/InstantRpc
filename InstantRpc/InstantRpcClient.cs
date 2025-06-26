@@ -51,7 +51,7 @@ namespace InstantRpc
                     while (!awaiterCanceller.Token.IsCancellationRequested)
                     {
                         var response = ExecuteImpl($"WAITFOR|{typeof(T).AssemblyQualifiedName}|{InstanceId}|||");
-                        if (Parse<bool>(response)) { return; }
+                        if (Parser.Parse<bool>(response)) { return; }
 
                         Task.Delay(TimeSpan.FromSeconds(1), awaiterCanceller.Token);
                     }
@@ -99,12 +99,12 @@ namespace InstantRpc
         /// <exception cref="ArgumentException">TValue does not support Parse.</exception>
         public TValue Get<TValue>(Expression<Func<T, TValue>> expression)
         {
-            if (!CanParse(typeof(TValue))) { throw new ArgumentException($"{typeof(TValue)} does not support Parse.", nameof(expression)); }
+            if (!Parser.CanParse(typeof(TValue))) { throw new ArgumentException($"{typeof(TValue)} does not support Parse.", nameof(expression)); }
 
             var memberName = GetMemberAndMethodPath(expression);
             var response = Execute("GET", memberName);
 
-            return Parse<TValue>(response);
+            return Parser.Parse<TValue>(response);
         }
 
         /// <summary>
@@ -116,10 +116,10 @@ namespace InstantRpc
         /// <exception cref="ArgumentException"></exception>
         public TReturn Invoke<TReturn>(Expression<Func<T, TReturn>> expression)
         {
-            if (!CanParse(typeof(TReturn))) { throw new ArgumentException($"{typeof(TReturn)} does not support Parse.", nameof(expression)); }
+            if (!Parser.CanParse(typeof(TReturn))) { throw new ArgumentException($"{typeof(TReturn)} does not support Parse.", nameof(expression)); }
 
             var response = InvokeImpl(expression);
-            return Parse<TReturn>(response);
+            return Parser.Parse<TReturn>(response);
         }
 
         /// <summary>
@@ -279,7 +279,7 @@ namespace InstantRpc
                 // constant
                 var value = constant.Value;
 
-                if (!CanParse(value.GetType())) { throw new ArgumentException($"{value.GetType()} does not support Parse."); }
+                if (!Parser.CanParse(value.GetType())) { throw new ArgumentException($"{value.GetType()} does not support Parse."); }
 
                 return value;
             }
@@ -289,30 +289,10 @@ namespace InstantRpc
                 var lambda = Expression.Lambda<Func<object>>(Expression.Convert(expression, typeof(object)));
                 var value = lambda.Compile().Invoke();
 
-                if (!CanParse(value.GetType())) { throw new ArgumentException($"{value.GetType()} does not support Parse."); }
+                if (!Parser.CanParse(value.GetType())) { throw new ArgumentException($"{value.GetType()} does not support Parse."); }
 
                 return value;
             }
-        }
-
-        private static bool CanParse(Type type)
-        {
-            if (type == typeof(string)) { return true; }
-            if (type.IsEnum) { return true; }
-
-            var parseMethod = type.GetMethod("Parse", new Type[] { typeof(string) });
-            return parseMethod != null;            
-        }
-
-        private static TValue Parse<TValue>(string value)
-        {
-            if (typeof(TValue) == typeof(string)) { return (TValue)(object)value; }
-            if (typeof(TValue).IsEnum) { return (TValue)Enum.Parse(typeof(TValue), value); }
-
-            var parseMethod = typeof(TValue).GetMethod("Parse", new Type[] { typeof(string) });
-            if (parseMethod is null) { throw new NotSupportedException($"'Parse(string)' is not implemented on type [{typeof(TValue)}]."); }
-
-            return (TValue)parseMethod.Invoke(null, new[] { value });
         }
     }
 }

@@ -234,18 +234,7 @@ namespace InstantRpc
 
         private static object Parse(XElement element)
         {
-            return Parse(GetType(element), element.Value);
-        }
-
-        private static object Parse(Type type, string value)
-        {
-            if (type == typeof(string)) { return value; }
-            if (type.IsEnum) { return Enum.Parse(type, value); }
-
-            var parseMethod = type.GetMethod("Parse", new Type[] { typeof(string) });
-            if (parseMethod is null) { throw new NotSupportedException($"'Parse(string)' is not implemented on type [{type}]."); }
-
-            return parseMethod.Invoke(null, new[] { value });
+            return Parser.Parse(GetType(element), element.Value);
         }
     }
 }
