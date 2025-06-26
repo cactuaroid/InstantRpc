@@ -1,4 +1,5 @@
 ﻿using InstantRpc.Test.Wpf;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Diagnostics;
 using System.Windows;
 
@@ -13,6 +14,9 @@ namespace InstantRpc.Test
         [ClassInitialize]
         public static void ClassInit(TestContext context)
         {
+            // Ensure no previous instance is running
+            Process.GetProcessesByName("InstantRpc.Test.Wpf.exe").FirstOrDefault()?.Kill();
+
             _app = Process.Start("InstantRpc.Test.Wpf.exe");
             _client = new InstantRpcClient<MainWindow>();
             _client.WaitUntilExposed(TimeSpan.FromSeconds(5));
@@ -47,6 +51,26 @@ namespace InstantRpc.Test
             Assert.IsFalse(_client.Get((x) => x.IsVisible));
             _client.Invoke((x) => x.Show());
             Assert.IsTrue(_client.Get((x) => x.IsVisible));
+        }
+
+        [TestMethod]
+        public void GetSetInvoke_PropertyChain()
+        {
+            _client.Set((x) => ((MainWindowViewModel)x.DataContext).Value, "changed");
+            Assert.AreEqual("changed", _client.Get((x) => ((MainWindowViewModel)x.DataContext).Value));
+            Assert.AreEqual("changed", _client.Invoke((x) => ((MainWindowViewModel)x.DataContext).GetValue()));
+        }
+
+        [TestMethod]
+        public void Invoke_PropertyChain_PrimitiveArgs()
+        {
+            Assert.AreEqual(3, _client.Invoke((x) => ((MainWindowViewModel)x.DataContext).Add(1, 2)));
+        }
+
+        [TestMethod]
+        public void Invoke_PropertyChain_ConstructorArgs()
+        {
+            Assert.AreEqual("123", _client.Invoke((x) => ((MainWindowViewModel)x.DataContext).Concat(new MyParam("1", "2"), new MyParam() { Value = "3" })));
         }
     }
 }

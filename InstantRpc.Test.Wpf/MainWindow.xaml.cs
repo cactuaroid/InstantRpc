@@ -20,6 +20,8 @@ namespace InstantRpc.Test.Wpf
         {
             InitializeComponent();
 
+            DataContext = new MainWindowViewModel();
+
             // expose this instance to InstantRpc with Dispatcher.Invoke() wrapper so that it can access UI parts
             InstantRpcService.Expose(this, (a) => Dispatcher.Invoke(a), (f) => Dispatcher.Invoke(f));
         }

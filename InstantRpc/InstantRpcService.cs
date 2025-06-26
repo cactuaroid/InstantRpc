@@ -149,7 +149,7 @@ namespace InstantRpc
 
         private static string Get(TargetInstance target, string memberPath)
         {
-            var (instance, memberName) = ExtractPath(target.Instance, memberPath);
+            var (instance, memberName) = ExtractPath(target, memberPath);
             var prop = instance.GetType().GetProperty(memberName);
             var result = target.FuncWrapper.Invoke(() => prop.GetValue(instance));
 
@@ -158,7 +158,7 @@ namespace InstantRpc
 
         private static string Set(TargetInstance target, string memberPath, string arg)
         {
-            var (instance, memberName) = ExtractPath(target.Instance, memberPath);
+            var (instance, memberName) = ExtractPath(target, memberPath);
             var prop = instance.GetType().GetProperty(memberName);
             var argXml = XElement.Parse(arg);
 
@@ -170,7 +170,7 @@ namespace InstantRpc
 
         private static string Invoke(TargetInstance target, string memberPath, string args)
         {
-            var (instance, memberName) = ExtractPath(target.Instance, memberPath);
+            var (instance, memberName) = ExtractPath(target, memberPath);
             var argsXml = XElement.Parse(args);
             var param = DeserializeArguments(argsXml.Elements());
 
@@ -180,13 +180,14 @@ namespace InstantRpc
             return $"{true}|{result}";
         }
 
-        private static (object Instance, string MemberName) ExtractPath(object target, string memberPath)
+        private static (object Instance, string MemberName) ExtractPath(TargetInstance target, string memberPath)
         {
             var members = memberPath.Split('.');
-            var currentInstance = target;
+            var currentInstance = target.Instance;
             for (var i = 0; i < members.Length - 1; i++)
             {
-                currentInstance = currentInstance.GetType().GetProperty(members[i]).GetValue(currentInstance);
+                currentInstance = target.FuncWrapper.Invoke(() =>
+                    currentInstance.GetType().GetProperty(members[i]).GetValue(currentInstance));
             }
 
             return (currentInstance, members.Last());
