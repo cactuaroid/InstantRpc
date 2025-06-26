@@ -151,6 +151,11 @@ namespace InstantRpc
         {
             var (instance, memberName) = ExtractPath(target, memberPath);
             var prop = instance.GetType().GetProperty(memberName);
+            if (prop is null)
+            {
+                return $"{false}|Property '{memberName}' not found on type '{instance.GetType()}'.";
+            }
+
             var result = target.FuncWrapper.Invoke(() => prop.GetValue(instance));
 
             return $"{true}|{result}";
@@ -160,6 +165,11 @@ namespace InstantRpc
         {
             var (instance, memberName) = ExtractPath(target, memberPath);
             var prop = instance.GetType().GetProperty(memberName);
+            if (prop is null)
+            {
+                return $"{false}|Property '{memberName}' not found on type '{instance.GetType()}'.";
+            }
+
             var argXml = XElement.Parse(arg);
 
             var param = DeserializeArgument(argXml);
@@ -175,6 +185,11 @@ namespace InstantRpc
             var param = DeserializeArguments(argsXml.Elements());
 
             var method = instance.GetType().GetMethod(memberName, argsXml.Elements().Select((x) => GetType(x)).ToArray());
+            if (method is null)
+            {
+                return $"{false}|Method '{memberName}' not found on type '{instance.GetType()}'.";
+            }
+
             var result = target.FuncWrapper.Invoke(() => method.Invoke(instance, param));
 
             return $"{true}|{result}";

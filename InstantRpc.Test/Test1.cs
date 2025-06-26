@@ -15,7 +15,7 @@ namespace InstantRpc.Test
         public static void ClassInit(TestContext context)
         {
             // Ensure no previous instance is running
-            Process.GetProcessesByName("InstantRpc.Test.Wpf.exe").FirstOrDefault()?.Kill();
+            Process.GetProcessesByName("InstantRpc.Test.Wpf").FirstOrDefault()?.Kill();
 
             _app = Process.Start("InstantRpc.Test.Wpf.exe");
             _client = new InstantRpcClient<MainWindow>();
@@ -71,6 +71,22 @@ namespace InstantRpc.Test
         public void Invoke_PropertyChain_ConstructorArgs()
         {
             Assert.AreEqual("123", _client.Invoke((x) => ((MainWindowViewModel)x.DataContext).Concat(new MyParam("1", "2"), new MyParam() { Value = "3" })));
+        }
+
+        [TestMethod]
+        public void GetSetInvoke_Tuple()
+        {
+            _client.Set((x) => ((MainWindowViewModel)x.DataContext).Tuple, (3, 4));
+            Assert.AreEqual((3, 4), _client.Get((x) => ((MainWindowViewModel)x.DataContext).Tuple));
+            Assert.AreEqual((3, 4), _client.Invoke((x) => ((MainWindowViewModel)x.DataContext).GetTuple()));
+        }
+
+        [TestMethod]
+        public void GetSetInvoke_ParsableClass()
+        {
+            _client.Set((x) => ((MainWindowViewModel)x.DataContext).ParsableValue, new MyParam("1", "2"));
+            Assert.AreEqual("12", _client.Get((x) => ((MainWindowViewModel)x.DataContext).ParsableValue).Value);
+            Assert.AreEqual("12", _client.Invoke((x) => ((MainWindowViewModel)x.DataContext).GetParsableValue()).Value);
         }
     }
 }
