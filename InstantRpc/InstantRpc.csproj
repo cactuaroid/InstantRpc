@@ -2,18 +2,18 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyVersion>0.2.0.0</AssemblyVersion>
+    <AssemblyVersion>0.3.0.0</AssemblyVersion>
     <Copyright>cactuaroid</Copyright>
-    <FileVersion>0.2.0.0</FileVersion>
-    <Version>0.2.0</Version>
+    <FileVersion>0.3.0.0</FileVersion>
+    <Version>0.3.0</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DebugType>embedded</DebugType>
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DebugType>embedded</DebugType>
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
 </Project>
